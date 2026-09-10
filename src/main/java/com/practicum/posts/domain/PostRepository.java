@@ -10,4 +10,18 @@ public interface PostRepository {
                         int pageNumber, int pageSize);
 
     long count(String titleSubstring, List<String> tags);
+
+    Post save(Post post);
+
+    Post update(Post post);
+
+    void delete(Long id);
+
+    boolean existsById(Long id);
+
+    long incrementLikes(Long id);
+
+    void updateImage(Long id, byte[] image);
+
+    Optional<byte[]> getImage(Long id);
 }

@@ -19,6 +19,7 @@ public class ApiApplication {
         AnnotationConfigWebApplicationContext context =
                 new AnnotationConfigWebApplicationContext();
         context.register(ApplicationConfig.class);
+        context.getEnvironment().setActiveProfiles("h2");
 
         DispatcherServlet dispatcherServlet = new DispatcherServlet(context);
 

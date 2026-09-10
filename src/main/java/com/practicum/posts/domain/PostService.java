@@ -1,10 +1,12 @@
 package com.practicum.posts.domain;
 
+import com.practicum.posts.api.PostRequest;
 import com.practicum.posts.api.PostResponse;
 import com.practicum.posts.api.PostsPageResponse;
 import com.practicum.shared.exception.PostNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +47,64 @@ public class PostService {
         return new PostsPageResponse(posts, hasPrev, hasNext, lastPage);
     }
 
-    SearchQuery parseSearch(String search) {
+    @Transactional
+    public PostResponse createPost(PostRequest request) {
+        validate(request);
+        Post post = postMapper.toDomain(request);
+        Post saved = postRepository.save(post);
+        return postMapper.toResponse(saved, false);
+    }
+
+    @Transactional
+    public PostResponse updatePost(Long id, PostRequest request) {
+        validate(request);
+        if (!postRepository.existsById(id)) {
+            throw new PostNotFoundException(POST_NOT_FOUND_MESSAGE);
+        }
+        Post post = postMapper.toDomain(request);
+        post.setId(id);
+        return postMapper.toResponse(postRepository.update(post), false);
+    }
+
+    @Transactional
+    public void deletePost(Long id) {
+        if (!postRepository.existsById(id)) {
+            throw new PostNotFoundException(POST_NOT_FOUND_MESSAGE);
+        }
+        postRepository.delete(id);
+    }
+
+    @Transactional
+    public long likePost(Long id) {
+        if (!postRepository.existsById(id)) {
+            throw new PostNotFoundException(POST_NOT_FOUND_MESSAGE);
+        }
+        return postRepository.incrementLikes(id);
+    }
+
+    @Transactional
+    public void updateImage(Long id, byte[] image) {
+        if (!postRepository.existsById(id)) {
+            throw new PostNotFoundException(POST_NOT_FOUND_MESSAGE);
+        }
+        postRepository.updateImage(id, image);
+    }
+
+    public byte[] getImage(Long id) {
+        return postRepository.getImage(id)
+                .orElseThrow(() -> new PostNotFoundException(POST_NOT_FOUND_MESSAGE));
+    }
+
+    private void validate(PostRequest request) {
+        if (request.getTitle() == null || request.getTitle().isBlank()) {
+            throw new IllegalArgumentException("Поле 'title' обязательно");
+        }
+        if (request.getText() == null || request.getText().isBlank()) {
+            throw new IllegalArgumentException("Поле 'text' обязательно");
+        }
+    }
+
+    private SearchQuery parseSearch(String search) {
         if (search == null || search.isBlank()) {
             return SearchQuery.empty();
         }

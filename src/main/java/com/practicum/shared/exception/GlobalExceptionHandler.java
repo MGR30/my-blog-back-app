@@ -22,4 +22,23 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException exception,
+                                                                        WebRequest request) {
+        ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+                "Bad request",
+                exception.getMessage(),
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFound(CommentNotFoundException ex, WebRequest req) {
+        ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+                "Not found", ex.getMessage(),
+                req.getDescription(false).replace("uri=", ""), LocalDateTime.now());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
 }

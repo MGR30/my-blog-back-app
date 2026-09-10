@@ -3,10 +3,16 @@ package com.practicum.posts.domain;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -63,12 +69,94 @@ public class PostRepositoryImpl implements PostRepository {
     }
 
     @Override
+    @Transactional
+    public Post save(Post post) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO post (title, text, likes_count) VALUES (?, ?, 0)",
+                    Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, post.getTitle());
+            ps.setString(2, post.getText());
+            return ps;
+        }, keyHolder);
+        Long id = Objects.requireNonNull(keyHolder.getKey()).longValue();
+        syncTags(id, post.getTags());
+        return getPostById(id).orElseThrow();
+    }
+
+    @Override
+    @Transactional
+    public Post update(Post post) {
+        jdbcTemplate.update("UPDATE post SET title = ?, text = ? WHERE id = ?",
+                post.getTitle(), post.getText(), post.getId());
+        jdbcTemplate.update("DELETE FROM post_tag WHERE post_id = ?", post.getId());
+        syncTags(post.getId(), post.getTags());
+        return getPostById(post.getId()).orElseThrow();
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        jdbcTemplate.update("DELETE FROM post WHERE id = ?", id);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        Integer cnt = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM post WHERE id = ?", Integer.class, id);
+        return cnt != null && cnt > 0;
+    }
+
+    @Override
+    public long incrementLikes(Long id) {
+        jdbcTemplate.update("UPDATE post SET likes_count = likes_count + 1 WHERE id = ?", id);
+        Long likes = jdbcTemplate.queryForObject(
+                "SELECT likes_count FROM post WHERE id = ?", Long.class, id);
+        return likes == null ? 0L : likes;
+    }
+
+    @Override
+    public void updateImage(Long id, byte[] image) {
+        jdbcTemplate.update("UPDATE post SET image = ? WHERE id = ?", image, id);
+    }
+
+    @Override
+    public Optional<byte[]> getImage(Long id) {
+        try {
+            byte[] image = jdbcTemplate.queryForObject(
+                    "SELECT image FROM post WHERE id = ?", byte[].class, id);
+            return Optional.ofNullable(image);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public long count(String titleSubstring, List<String> tags) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM post p WHERE 1 = 1");
         List<Object> args = new ArrayList<>();
         appendFilters(sql, args, titleSubstring, tags);
         Long total = jdbcTemplate.queryForObject(sql.toString(), Long.class, args.toArray());
         return total == null ? 0L : total;
+    }
+
+    private void syncTags(Long postId, List<String> tags) {
+        if (tags == null || tags.isEmpty()) return;
+        for (String tag : tags) {
+            if (tag == null || tag.isBlank()) continue;
+            String normalized = tag.trim().toLowerCase();
+            jdbcTemplate.update("""
+                    INSERT INTO tag(name) VALUES (?)
+                    ON CONFLICT (name) DO NOTHING
+                    """, normalized);
+            Long tagId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM tag WHERE name = ?", Long.class, normalized);
+            jdbcTemplate.update("""
+                    INSERT INTO post_tag(post_id, tag_id) VALUES (?, ?)
+                    ON CONFLICT DO NOTHING
+                    """, postId, tagId);
+        }
     }
 
     private void appendFilters(StringBuilder sql, List<Object> args,

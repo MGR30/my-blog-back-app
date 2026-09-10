@@ -20,8 +20,8 @@ public class PostMapper {
                 post.getTitle(),
                 text,
                 post.getTags() == null ? List.of() : post.getTags(),
-                post.getLikesCount(),
-                post.getCommentsCount()
+                post.getLikesCount() == null ? 0L : post.getLikesCount(),
+                post.getCommentsCount() == null ? 0L : post.getCommentsCount()
         );
     }
 

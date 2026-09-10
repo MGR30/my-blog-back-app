@@ -12,4 +12,5 @@ public class Post {
     private List<String> tags;
     private Long likesCount;
     private Long commentsCount;
+    private byte[] image;
 }
