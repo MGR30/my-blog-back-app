@@ -9,11 +9,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostResponse {
-    private Long id;
-    private String title;
-    private String text;
-    private List<String> tags;
-    private Long likesCount;
-    private Long commentsCount;
+public class PostsPageResponse {
+    private List<PostResponse> posts;
+    private boolean hasPrev;
+    private boolean hasNext;
+    private int lastPage;
 }
