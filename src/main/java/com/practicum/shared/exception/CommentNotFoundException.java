@@ -1,6 +1,6 @@
 package com.practicum.shared.exception;
 
-public class CommentNotFoundException extends RuntimeException{
+public class CommentNotFoundException extends RuntimeException {
     public CommentNotFoundException(String message) {
         super(message);
     }

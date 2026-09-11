@@ -1,3 +1,4 @@
+-- AI. Данный для запуска локально
 -- Очистка таблиц (если нужно пересоздать данные)
 -- TRUNCATE TABLE post_teg RESTART IDENTITY CASCADE;
 -- TRUNCATE TABLE post RESTART IDENTITY CASCADE;

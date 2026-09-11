@@ -58,7 +58,7 @@ public class CommentService {
                 .filter(x -> x.getPostId().equals(postId))
                 .orElseThrow(() -> new CommentNotFoundException("Комментарий не найден"));
 
-        commentRepository.delete(comment.getId());;
+        commentRepository.delete(comment.getId());
     }
 
     private void ensurePostExists(Long postId) {
