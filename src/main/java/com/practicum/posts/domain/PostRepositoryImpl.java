@@ -143,19 +143,29 @@ public class PostRepositoryImpl implements PostRepository {
 
     private void syncTags(Long postId, List<String> tags) {
         if (tags == null || tags.isEmpty()) return;
+
         for (String tag : tags) {
             if (tag == null || tag.isBlank()) continue;
+
             String normalized = tag.trim().toLowerCase();
+
             jdbcTemplate.update("""
-                    INSERT INTO tag(name) VALUES (?)
-                    ON CONFLICT (name) DO NOTHING
-                    """, normalized);
+                    INSERT INTO tag (name)
+                    SELECT ? WHERE NOT EXISTS (
+                        SELECT 1 FROM tag WHERE name = ?
+                    )
+                    """, normalized, normalized);
+
             Long tagId = jdbcTemplate.queryForObject(
                     "SELECT id FROM tag WHERE name = ?", Long.class, normalized);
+
             jdbcTemplate.update("""
-                    INSERT INTO post_tag(post_id, tag_id) VALUES (?, ?)
-                    ON CONFLICT DO NOTHING
-                    """, postId, tagId);
+                    INSERT INTO post_tag (post_id, tag_id)
+                    SELECT ?, ? WHERE NOT EXISTS (
+                        SELECT 1 FROM post_tag
+                        WHERE post_id = ? AND tag_id = ?
+                    )
+                    """, postId, tagId, postId, tagId);
         }
     }
 

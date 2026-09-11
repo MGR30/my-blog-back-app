@@ -53,10 +53,12 @@ public class CommentService {
     @Transactional
     public void delete(Long postId, Long commentId) {
         ensurePostExists(postId);
-        if (!commentRepository.existsById(commentId)) {
-            throw new CommentNotFoundException("Комментарий не найден");
-        }
-        commentRepository.delete(commentId);
+
+        Comment comment = commentRepository.findById(commentId)
+                .filter(x -> x.getPostId().equals(postId))
+                .orElseThrow(() -> new CommentNotFoundException("Комментарий не найден"));
+
+        commentRepository.delete(comment.getId());;
     }
 
     private void ensurePostExists(Long postId) {
