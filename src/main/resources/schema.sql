@@ -8,7 +8,8 @@ CREATE TABLE post (
     title         VARCHAR(255) NOT NULL,
     text          TEXT         NOT NULL,
     image         BYTEA,
-    likes_count   INT          NOT NULL DEFAULT 0
+    likes_count   INT          NOT NULL DEFAULT 0,
+    comment_count INT          NOT NULL DEFAULT 0
 );
 
 CREATE TABLE tag (

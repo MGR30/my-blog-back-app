@@ -1,15 +1,18 @@
 package com.practicum;
 
+import com.practicum.config.ApplicationConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.web.WebAppConfiguration;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringJUnitConfig(ApplicationConfig.class)
+@WebAppConfiguration
 @ActiveProfiles("h2")
+@TestPropertySource(properties = {"db.data="})
 public abstract class BaseIntegrationTest {
 
     @Autowired
