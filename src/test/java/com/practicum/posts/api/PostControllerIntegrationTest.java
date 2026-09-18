@@ -7,23 +7,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class PostControllerIntegrationTest extends BaseIntegrationTest {
-
     @Autowired
-    private WebApplicationContext wac;
-
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
         insertDefaultData();
     }
 
@@ -155,5 +149,12 @@ public class PostControllerIntegrationTest extends BaseIntegrationTest {
     void getPostById_notFound() throws Exception {
         mockMvc.perform(get("/api/posts/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getPosts_withoutParams_usesDefaults() throws Exception {
+        mockMvc.perform(get("/api/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts").exists());
     }
 }

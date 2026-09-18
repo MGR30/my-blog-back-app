@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException exception,
                                                                         WebRequest request) {
-        ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND.value(),
+        ErrorResponse response = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
                 "Bad request",
                 exception.getMessage(),
                 request.getDescription(false).replace("uri=", ""),
