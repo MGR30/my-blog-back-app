@@ -22,9 +22,9 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<PostsPageResponse> getPosts(
-            @RequestParam("search") String search,
-            @RequestParam("pageNumber") int pageNumber,
-            @RequestParam("pageSize") int pageSize) {
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "pageNumber", required = false, defaultValue = "1") int pageNumber,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "5") int pageSize) {
         return ResponseEntity.ok(postService.getPosts(search, pageNumber, pageSize));
     }
 
