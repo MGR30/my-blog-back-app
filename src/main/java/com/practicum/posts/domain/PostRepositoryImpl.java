@@ -10,10 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @AllArgsConstructor
@@ -34,17 +31,14 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     public Optional<Post> getPostById(Long id) {
         String sql = """
-                SELECT p.id,
-                       p.title,
-                       p.text,
-                       p.likes_count,
+                SELECT p.id, p.title, p.text, p.likes_count,
                        (SELECT COUNT(*) FROM comment c WHERE c.post_id = p.id) AS comment_count
                 FROM post p
                 WHERE p.id = ?
                 """;
         try {
             Post post = jdbcTemplate.queryForObject(sql, postRowMapper, id);
-            post.setTags(getTagsByPostId(id));
+            post.setTags(loadTagsForPosts(List.of(id)).getOrDefault(id, List.of()));
             return Optional.of(post);
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
@@ -62,8 +56,15 @@ public class PostRepositoryImpl implements PostRepository {
         args.add((long) (pageNumber - 1) * pageSize);
 
         List<Post> posts = jdbcTemplate.query(sql.toString(), postRowMapper, args.toArray());
+        if (posts.isEmpty()) {
+            return posts;
+        }
+
+        List<Long> postIds = posts.stream().map(Post::getId).toList();
+        Map<Long, List<String>> tagsByPostId = loadTagsForPosts(postIds);
+
         for (Post post : posts) {
-            post.setTags(getTagsByPostId(post.getId()));
+            post.setTags(tagsByPostId.getOrDefault(post.getId(), List.of()));
         }
         return posts;
     }
@@ -189,13 +190,21 @@ public class PostRepositoryImpl implements PostRepository {
         }
     }
 
-    private List<String> getTagsByPostId(Long postId) {
-        String getTagsSql = """
-                SELECT t.name
+    private Map<Long, List<String>> loadTagsForPosts(List<Long> postIds) {
+        String placeholders = String.join(",", Collections.nCopies(postIds.size(), "?"));
+        String sql = """
+                SELECT pt.post_id, t.name
                 FROM tag t
                 JOIN post_tag pt ON t.id = pt.tag_id
-                WHERE pt.post_id = ?
+                WHERE pt.post_id IN (""" + placeholders + """
+                )
                 """;
-        return jdbcTemplate.queryForList(getTagsSql, String.class, postId);
+
+        Map<Long, List<String>> result = new HashMap<>();
+        jdbcTemplate.query(sql, rs -> {
+            Long postId = rs.getLong("post_id");
+            result.computeIfAbsent(postId, k -> new ArrayList<>()).add(rs.getString("name"));
+        }, postIds.toArray());
+        return result;
     }
 }
